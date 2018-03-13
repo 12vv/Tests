@@ -3,7 +3,10 @@ import scrapy
 import uniout
 from scrapy.http import Request
 import urlparse
+import datetime
 from test1.items import ArticleItem
+
+from test1.utils.common import get_md5
 
 import sys
 reload(sys)
@@ -44,12 +47,17 @@ class JobboleSpider(scrapy.Spider):
         # details in article
         front_image_url = response.meta.get("front_image_url", "")
         title = response.xpath('/html/body/div[3]/div[2]/div[3]/h2/text()').extract_first("")
-        data = response.xpath('/html/body/div[3]/div[2]/div[3]/div[1]/span[1]/text()').extract_first("")
+        date_t = response.xpath('/html/body/div[3]/div[2]/div[3]/div[1]/span[1]/text()').extract_first("")
         content = response.xpath('//*[@id="font_class"]/div').extract_first("")
-        print title, data, content
+        print title, date_t
         # fill value
+        article_item["url_object_id"] = get_md5(response.url)
         article_item["title"] = title
-        article_item["data"] = data
+        try:
+            date_t = datetime.datetime.strptime(date_t, "%Y/%m/%d").date()
+        except Exception as e:
+            date_t = datetime.datetime.now().date()
+        article_item["date_t"] = date_t
         article_item["content"] = content
         article_item["front_image_url"] = [front_image_url]
         # article_item["front_image_path"] = front_image_path

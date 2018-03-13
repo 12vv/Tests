@@ -16,8 +16,9 @@ class Test1Item(scrapy.Item):
 
 class ArticleItem(scrapy.Item):
     title = scrapy.Field()
-    data = scrapy.Field()
+    date_t = scrapy.Field()
     url = scrapy.Field()
     url_object_id = scrapy.Field()
     front_image_url = scrapy.Field()
+    front_image_path = scrapy.Field()
     content = scrapy.Field()
