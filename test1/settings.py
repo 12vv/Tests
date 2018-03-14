@@ -72,7 +72,7 @@ ITEM_PIPELINES = {
     # 'test1.pipelines.JsonExporterPipeline': 2,
     # 'scrapy.pipelines.images.ImagesPipeline': 1,
     # 'test1.pipelines.ArticleImagePipeline': 1,
-    'test1.pipelines.MysqlPipeline': 1
+    'test1.pipelines.MysqlTwistedPipeline': 1
 }
 IMAGES_URLS_FIELD = "front_image_url"
 project_dir = os.path.abspath(os.path.dirname(__file__))
@@ -107,3 +107,7 @@ FEED_EXPORT_ENCODING = 'utf-8'
 
 # setting for database
 MYSQL_HOST = "localhost"
+MYSQL_DBNAME = "article_spider"
+MYSQL_USER = "root"
+MYSQL_PASSWORD = "12345"
+

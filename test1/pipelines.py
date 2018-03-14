@@ -8,10 +8,13 @@
 import json
 import codecs
 import MySQLdb
+import MySQLdb.cursors
 
 from scrapy.pipelines.images import ImagesPipeline
 # use scrapy's function to handle json
 from scrapy.exporters import JsonItemExporter
+
+from twisted.enterprise import adbapi
 
 class Test1Pipeline(object):
 # class JsonWriterPipeline(object):
@@ -59,7 +62,7 @@ class JsonExporterPipeline(object):
 
 class MysqlPipeline(object):
     def __init__(self):
-        self.conn = MySQLdb.connect('localhost', 'Garrick', 'Akashi12', 'article_spider', charset='utf8', use_unicode=True)
+        self.conn = MySQLdb.connect('localhost', 'root', '12345', 'article_spider', charset='utf8', use_unicode=True)
         self.cursor = self.conn.cursor()
 
     def process_item(self, item, spider):
@@ -69,6 +72,44 @@ class MysqlPipeline(object):
         """
         self.cursor.execute(insert_sql, (item['title'], item['url'], item['url_object_id'], item['date_t'], item['content']))
         self.conn.commit()
+
+
+# 连接池：使插入变成异步操作
+class MysqlTwistedPipeline(object):
+    def __init__(self, dbpool):
+        self.dbpool = dbpool
+
+    @classmethod
+    def from_settings(cls, settings):
+        dbparms = dict(
+            host=settings["MYSQL_HOST"],
+            db=settings["MYSQL_DBNAME"],
+            user=settings["MYSQL_USER"],
+            passwd=settings["MYSQL_PASSWORD"],
+            charset='utf8',
+            cursorclass=MySQLdb.cursors.DictCursor,
+            use_unicode=True
+        )
+        dbpool = adbapi.ConnectionPool('MySQLdb', **dbparms)
+
+        return cls(dbpool)
+
+    def process_item(self, item, spider):
+        # 使用twisted异步化
+        query = self.dbpool.runInteraction(self.do_insert, item)
+        query.addErrback(self.handle_error, item, spider)
+
+    def handle_error(self, failure, item, spider):
+        # 处理异步插入异常
+        print failure
+
+    def do_insert(self, cursor, item):
+        insert_sql = """
+            insert into article(title, url, url_object_id, date_t, content)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        cursor.execute(insert_sql, (item['title'], item['url'], item['url_object_id'], item['date_t'], item['content']))
+
 
 
 # image process
